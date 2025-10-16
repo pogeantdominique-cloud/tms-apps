@@ -1,0 +1,2714 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TMS × Team Trade - Système Complet Cobia3 V3 FINAL + Camera Scanner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
+    <!-- ✅ Bibliothèque pour scanner avec la caméra -->
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0077be 0%, #004d7a 100%);
+            min-height: 100vh;
+        }
+
+        /* Animations */
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .animate-slide-in {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .animate-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        .animate-bounce {
+            animation: bounce 1s infinite;
+        }
+
+        /* Status badges */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-waiting { background: #fef3c7; color: #92400e; }
+        .status-validated { background: #d1fae5; color: #065f46; }
+        .status-onboard { background: #dbeafe; color: #1e40af; }
+        .status-delivered { background: #d1fae5; color: #065f46; }
+        .status-anomaly { background: #fee2e2; color: #991b1b; }
+        .status-en-attente-validation { background: #fef3c7; color: #92400e; }
+        .status-en-attente-paiement { background: #fef3c7; color: #92400e; }
+        .status-paiement-validé { background: #d1fae5; color: #065f46; }
+        .status-bon-à-embarquer { background: #d1fae5; color: #065f46; }
+        .status-à-bord-cobia-3 { background: #dbeafe; color: #1e40af; }
+
+        /* Voyage Badge */
+        .voyage-badge {
+            background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+        }
+
+        /* Notification badge */
+        .notification-badge {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #ef4444;
+            color: white;
+            border-radius: 9999px;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            font-weight: bold;
+            animation: bounce 1s infinite;
+        }
+
+        /* Modal */
+        .modal-backdrop {
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(4px);
+        }
+
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            display: none;
+            z-index: 9999;
+            max-width: 400px;
+        }
+
+        .toast.show {
+            display: block;
+            animation: slideIn 0.3s;
+        }
+
+        .toast-success { border-left: 4px solid #10b981; }
+        .toast-info { border-left: 4px solid #3b82f6; }
+        .toast-warning { border-left: 4px solid #f59e0b; }
+        .toast-error { border-left: 4px solid #ef4444; }
+
+        /* Interface Douchette */
+        .scanner-interface {
+            background: #1f2937;
+            color: white;
+            border-radius: 16px;
+            padding: 2rem;
+            font-family: 'Courier New', monospace;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+        }
+
+        .scanner-display {
+            background: #059669;
+            color: white;
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+
+        .scanner-display.error {
+            background: #dc2626;
+        }
+
+        .scanner-btn {
+            width: 100%;
+            padding: 1rem;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .scanner-btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .scanner-btn-success:hover {
+            background: #059669;
+        }
+
+        .scanner-btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .scanner-btn-danger:hover {
+            background: #dc2626;
+        }
+
+        /* ✅ NOUVEAU: Styles pour le scanner caméra */
+        #camera-scanner-modal {
+            z-index: 9999;
+        }
+
+        #camera-reader {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        #camera-reader video {
+            border-radius: 12px;
+            width: 100% !important;
+            height: auto !important;
+        }
+
+        .camera-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+            color: white;
+            border-radius: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+        }
+
+        .camera-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(139, 92, 246, 0.4);
+        }
+
+        .camera-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Anomaly alert */
+        .anomaly-alert {
+            background: #fee2e2;
+            border: 2px solid #ef4444;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+        }
+
+        .anomaly-item {
+            background: white;
+            border-left: 4px solid #ef4444;
+            padding: 1rem;
+            margin: 0.5rem 0;
+            border-radius: 4px;
+        }
+
+        /* Historique timeline */
+        .timeline-item {
+            position: relative;
+            padding-left: 2rem;
+            padding-bottom: 1.5rem;
+            border-left: 2px solid #e5e7eb;
+        }
+
+        .timeline-item:last-child {
+            border-left: none;
+        }
+
+        .timeline-dot {
+            position: absolute;
+            left: -6px;
+            top: 0;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #3b82f6;
+        }
+
+        .timeline-dot.success { background: #10b981; }
+        .timeline-dot.warning { background: #f59e0b; }
+        .timeline-dot.error { background: #ef4444; }
+
+        /* Print styles */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #printArea, #printArea * {
+                visibility: visible;
+            }
+            #printArea {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
+        }
+
+        /* Barcode label styles */
+        .barcode-label {
+            width: 10cm;
+            background: white;
+            border: 2px solid #000;
+            padding: 1rem;
+            margin: 0 auto;
+        }
+
+        /* Payment validation highlight */
+        .payment-pending {
+            background: #fef3c7;
+            border: 2px solid #f59e0b;
+        }
+
+        .payment-validated {
+            background: #d1fae5;
+            border: 2px solid #10b981;
+        }
+
+        /* Responsive mobile */
+        @media (max-width: 768px) {
+            .scanner-interface {
+                padding: 1rem;
+            }
+            
+            .camera-btn {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .scanner-display {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- ÉCRAN DE CONNEXION -->
+    <div id="loginScreen" class="min-h-screen flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md animate-fade-in">
+            <div class="text-center mb-8">
+                <div class="w-20 h-20 bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl flex items-center justify-center text-4xl mx-auto mb-4 shadow-lg">
+                    🚢
+                </div>
+                <h1 class="text-3xl font-bold text-gray-900">TMS × Team Trade</h1>
+                <p class="text-gray-600 mt-2">Système Complet Cobia3</p>
+                <p class="text-sm text-purple-600 mt-1 font-semibold">V3 FINALE + 📷 Scanner Caméra 🚀</p>
+            </div>
+
+            <form onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Type de compte</label>
+                    <select id="userType" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all">
+                        <option value="secretaire">Secrétaire</option>
+                        <option value="bureau">Bureau / Direction</option>
+                        <option value="marin">Marin (Douchette)</option>
+                        <option value="entreprise">Entreprise Cliente</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Identifiant</label>
+                    <input type="text" id="username" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all" required value="marie">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Mot de passe</label>
+                    <input type="password" id="password" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all" required value="marie123">
+                </div>
+
+                <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold py-3 rounded-xl hover:from-blue-700 hover:to-blue-800 transform hover:scale-105 transition-all shadow-lg">
+                    🔐 Se connecter
+                </button>
+            </form>
+
+            <div class="mt-6 pt-6 border-t border-gray-200 text-xs text-gray-600 space-y-1">
+                <p><strong>Secrétaire:</strong> marie / marie123</p>
+                <p><strong>Co-Gérants:</strong> dany / dany123 ou dominique / dominique123</p>
+                <p><strong>Marin:</strong> teiki / teiki123</p>
+                <p><strong>Entreprise:</strong> magasin / magasin123</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- APPLICATION PRINCIPALE -->
+    <div id="mainApp" class="hidden min-h-screen bg-gray-50">
+        <!-- Header -->
+        <header class="bg-white shadow-md sticky top-0 z-50">
+            <div class="max-w-7xl mx-auto px-4 py-4">
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl flex items-center justify-center text-2xl shadow-lg">
+                            🚢
+                        </div>
+                        <div>
+                            <h1 class="text-xl font-bold text-gray-900">TMS × Team Trade</h1>
+                            <p class="text-xs text-gray-600" id="headerSubtitle">Système Complet</p>
+                        </div>
+                    </div>
+                    
+                    <!-- SÉLECTEUR DE VOYAGE -->
+                    <div id="voyageSelector" class="hidden flex items-center gap-4">
+                        <div class="voyage-badge">
+                            <div class="text-xs opacity-90">🚢 VOYAGE ACTIF</div>
+                            <div class="text-lg" id="currentVoyageDisplay">VOY-2025-W42</div>
+                            <div class="text-xs opacity-75" id="voyageDatesDisplay">14-20 Oct 2025</div>
+                        </div>
+                        <button onclick="changeVoyage()" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-semibold">
+                            Changer de voyage
+                        </button>
+                        <button id="closeVoyageBtn" onclick="closeVoyage()" class="hidden px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors text-sm font-semibold">
+                            🔒 Clôturer voyage
+                        </button>
+                    </div>
+                    
+                    <div class="flex items-center gap-4">
+                        <div class="text-right">
+                            <p class="font-semibold text-gray-900" id="userInfo">Utilisateur</p>
+                            <p class="text-xs text-gray-600" id="userRole">Rôle</p>
+                        </div>
+                        <button onclick="logout()" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
+                            Déconnexion
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation (Interface Secrétaire/Bureau) -->
+        <nav id="navTabs" class="bg-white border-b border-gray-200 hidden">
+            <div class="max-w-7xl mx-auto px-4">
+                <div class="flex space-x-8 overflow-x-auto">
+                    <button class="tab-btn px-4 py-4 text-sm font-semibold border-b-2 border-blue-600 text-blue-600 whitespace-nowrap" onclick="switchTab('enregistrement')">
+                        📦 Enregistrement
+                    </button>
+                    <button class="tab-btn px-4 py-4 text-sm font-semibold border-b-2 border-transparent text-gray-600 hover:text-gray-900 whitespace-nowrap" onclick="switchTab('validation')">
+                        ✅ Validation Bureau
+                    </button>
+                    <button id="paiementsTab" class="tab-btn px-4 py-4 text-sm font-semibold border-b-2 border-transparent text-gray-600 hover:text-gray-900 relative whitespace-nowrap" onclick="switchTab('paiements')">
+                        💳 Validation Paiements
+                        <span id="paiementsNotifBadge" class="notification-badge hidden">0</span>
+                    </button>
+                    <button class="tab-btn px-4 py-4 text-sm font-semibold border-b-2 border-transparent text-gray-600 hover:text-gray-900 whitespace-nowrap" onclick="switchTab('connaissements')">
+                        📋 Connaissements
+                    </button>
+                    <button class="tab-btn px-4 py-4 text-sm font-semibold border-b-2 border-transparent text-gray-600 hover:text-gray-900 whitespace-nowrap" onclick="switchTab('dashboard')">
+                        📊 Dashboard
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Contenu Principal -->
+        <main class="max-w-7xl mx-auto px-4 py-8">
+            
+            <!-- TAB: ENREGISTREMENT COLIS -->
+            <div id="tab-enregistrement" class="tab-content hidden">
+                <div class="bg-white rounded-2xl shadow-lg p-8">
+                    <div class="mb-6 flex justify-between items-center">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-900">📦 Enregistrement d'un nouveau colis</h2>
+                            <p class="text-sm text-gray-600 mt-2">Conformité DPAM - Toutes les mesures sont obligatoires</p>
+                        </div>
+                        <div class="voyage-badge text-center">
+                            <div class="text-xs opacity-90">Voyage</div>
+                            <div class="text-lg" id="formVoyageDisplay">VOY-2025-W42</div>
+                        </div>
+                    </div>
+                    
+                    <form id="registerForm" onsubmit="registerPackage(event)" class="space-y-8">
+                        <!-- INFORMATIONS CLIENT -->
+                        <div class="border-l-4 border-blue-500 pl-4">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">👥 Informations client</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Expéditeur *</label>
+                                    <input type="text" id="senderName" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 transition-all" required placeholder="Nom complet">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Téléphone expéditeur *</label>
+                                    <input type="tel" id="senderPhone" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 transition-all" required placeholder="87 123456">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Destinataire *</label>
+                                    <input type="text" id="receiverName" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 transition-all" required placeholder="Nom complet">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Téléphone destinataire *</label>
+                                    <input type="tel" id="receiverPhone" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 transition-all" required placeholder="87 654321">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Destination *</label>
+                                    <select id="destination" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 transition-all" required>
+                                        <option value="">Choisir...</option>
+                                        <option>Rangiroa</option>
+                                        <option>Tikehau</option>
+                                        <option>Manihi</option>
+                                        <option>Fakarava</option>
+                                        <option>Makemo</option>
+                                        <option>Hao</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- DIMENSIONS ET POIDS -->
+                        <div class="border-l-4 border-orange-500 pl-4">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-2">📏 Dimensions et poids (DPAM)</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Longueur (cm) *</label>
+                                    <input type="number" id="length" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl" required min="1" step="1" oninput="calculateVolume()">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Largeur (cm) *</label>
+                                    <input type="number" id="width" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl" required min="1" step="1" oninput="calculateVolume()">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Hauteur (cm) *</label>
+                                    <input type="number" id="height" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl" required min="1" step="1" oninput="calculateVolume()">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Poids réel (kg) *</label>
+                                    <input type="number" id="weight" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl" required min="0.1" step="0.1" oninput="calculatePrice()">
+                                </div>
+                            </div>
+
+                            <!-- CALCULS AUTOMATIQUES -->
+                            <div class="bg-gradient-to-r from-orange-50 to-yellow-50 border-2 border-orange-200 rounded-xl p-6">
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                    <div class="bg-white rounded-lg p-4 border border-orange-200">
+                                        <div class="text-xs text-gray-600 mb-1">Volume calculé</div>
+                                        <div class="text-2xl font-bold text-orange-600" id="calculatedVolume">0.00 m³</div>
+                                    </div>
+                                    <div class="bg-white rounded-lg p-4 border border-orange-200">
+                                        <div class="text-xs text-gray-600 mb-1">Poids volumétrique</div>
+                                        <div class="text-2xl font-bold text-blue-600" id="volumetricWeight">0.0 kg</div>
+                                    </div>
+                                    <div class="bg-white rounded-lg p-4 border border-green-200">
+                                        <div class="text-xs text-gray-600 mb-1">Poids taxable</div>
+                                        <div class="text-2xl font-bold text-green-600" id="taxableWeight">0.0 kg</div>
+                                    </div>
+                                </div>
+
+                                <div class="bg-white rounded-lg p-4">
+                                    <div class="text-sm text-gray-700 space-y-2">
+                                        <div class="flex justify-between">
+                                            <span>Tarif au kg (HT)</span>
+                                            <span class="font-semibold">140 XPF/kg</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span>Sous-total HT</span>
+                                            <span id="priceHT">0 XPF</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span>TVA 13%</span>
+                                            <span id="priceTVA">0 XPF</span>
+                                        </div>
+                                        <div class="flex justify-between pt-2 border-t-2">
+                                            <span class="font-bold text-gray-900">TOTAL TTC</span>
+                                            <span class="font-bold text-2xl text-green-600" id="priceTTC">0 XPF</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- DESCRIPTION -->
+                        <div class="border-l-4 border-green-500 pl-4">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">📝 Nature de la marchandise</h3>
+                            <select id="description" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl" required>
+                                <option value="">Sélectionner...</option>
+                                <option>Vivres périssables</option>
+                                <option>Vivres non périssables</option>
+                                <option>Matériaux de construction</option>
+                                <option>Équipements électriques</option>
+                                <option>Fret général</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold py-4 rounded-xl hover:from-blue-700 hover:to-blue-800 shadow-lg">
+                            ✅ Enregistrer le colis
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- TAB: VALIDATION BUREAU -->
+            <div id="tab-validation" class="tab-content hidden">
+                <div class="bg-white rounded-2xl shadow-lg p-8">
+                    <div class="flex justify-between items-center mb-6">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-900">✅ Validation Bureau - Scanner le code</h2>
+                            <p class="text-sm text-gray-600 mt-1">Validation des colis du voyage actif</p>
+                        </div>
+                        <div class="voyage-badge text-center">
+                            <div class="text-xs opacity-90">Voyage</div>
+                            <div class="text-lg" id="scanVoyageDisplay">VOY-2025-W42</div>
+                        </div>
+                    </div>
+                    
+                    <div class="scanner-interface max-w-2xl mx-auto">
+                        <div class="scanner-display" id="scanDisplay">
+                            📱 EN ATTENTE DE SCAN
+                        </div>
+                        
+                        <!-- ✅ NOUVEAU: Bouton pour activer la caméra -->
+                        <div class="mb-4 flex gap-3">
+                            <button onclick="startCameraScanner()" class="camera-btn flex-1">
+                                📷 Scanner avec caméra
+                            </button>
+                        </div>
+                        
+                        <input type="text" id="scanInput" class="w-full px-4 py-4 text-2xl font-bold text-center border-4 border-green-500 rounded-xl mb-4 uppercase" placeholder="OU SAISISSEZ LE CODE" onchange="handleScan()" autofocus>
+                        
+                        <div id="scanResult" class="hidden mt-6"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB VALIDATION PAIEMENTS -->
+            <div id="tab-paiements" class="tab-content hidden">
+                <div class="bg-white rounded-2xl shadow-lg p-8">
+                    <div class="flex justify-between items-center mb-6">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-900">💳 Validation des paiements entreprises</h2>
+                            <p class="text-sm text-gray-600 mt-1">Connaissements en attente de validation paiement</p>
+                        </div>
+                        <div class="voyage-badge text-center">
+                            <div class="text-xs opacity-90">Voyage</div>
+                            <div class="text-lg" id="paiementsVoyageDisplay">VOY-2025-W42</div>
+                        </div>
+                    </div>
+
+                    <div id="paiementsList" class="space-y-4">
+                        <!-- Liste dynamique -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: CONNAISSEMENTS -->
+            <div id="tab-connaissements" class="tab-content hidden">
+                <div class="bg-white rounded-2xl shadow-lg p-8">
+                    <div class="flex justify-between items-center mb-6">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-900">📋 Liste des connaissements</h2>
+                            <p class="text-sm text-gray-600 mt-1">Colis du voyage actif (incluant entreprises)</p>
+                        </div>
+                        <div class="voyage-badge text-center">
+                            <div class="text-xs opacity-90">Voyage</div>
+                            <div class="text-lg" id="tableVoyageDisplay">VOY-2025-W42</div>
+                        </div>
+                    </div>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-gray-50 border-b-2 border-gray-200">
+                                <tr>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase">N° BL</th>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase">Code</th>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase">Expéditeur</th>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase">Destination</th>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase">Type</th>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase">Statut</th>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="connaissementTableBody" class="divide-y divide-gray-200">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: DASHBOARD -->
+            <div id="tab-dashboard" class="tab-content hidden">
+                <!-- DASHBOARD GÉRANTS (avec CA) -->
+                <div id="dashboardGerants" class="hidden">
+                    <div class="mb-6 flex justify-between items-center">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-900">📊 Dashboard Direction</h2>
+                            <p class="text-sm text-gray-600 mt-1">Vue complète avec chiffre d'affaires</p>
+                        </div>
+                        <div class="voyage-badge text-center">
+                            <div class="text-xs opacity-90">Voyage</div>
+                            <div class="text-lg" id="dashVoyageGerants">VOY-2025-W42</div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+                        <div class="bg-gradient-to-br from-yellow-500 to-yellow-600 text-white rounded-2xl p-6 shadow-lg">
+                            <div class="text-4xl font-bold mb-2" id="waitingCountGerant">0</div>
+                            <div class="text-yellow-100">En attente validation</div>
+                        </div>
+                        <div class="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-2xl p-6 shadow-lg">
+                            <div class="text-4xl font-bold mb-2" id="validatedCountGerant">0</div>
+                            <div class="text-green-100">Bon à embarquer</div>
+                        </div>
+                        <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-2xl p-6 shadow-lg">
+                            <div class="text-4xl font-bold mb-2" id="onboardCountGerant">0</div>
+                            <div class="text-blue-100">À bord COBIA 3</div>
+                        </div>
+                        <div class="bg-gradient-to-br from-red-500 to-red-600 text-white rounded-2xl p-6 shadow-lg">
+                            <div class="text-4xl font-bold mb-2" id="anomalyCountGerant">0</div>
+                            <div class="text-red-100">Anomalies détectées</div>
+                        </div>
+                    </div>
+
+                    <!-- CHIFFRE D'AFFAIRES -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                        <div class="bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-2xl p-6 shadow-lg">
+                            <div class="text-sm text-purple-100 mb-1">CA Voyage Actif</div>
+                            <div class="text-3xl font-bold mb-2" id="caVoyage">0 XPF</div>
+                        </div>
+                        <div class="bg-gradient-to-br from-indigo-500 to-indigo-600 text-white rounded-2xl p-6 shadow-lg">
+                            <div class="text-sm text-indigo-100 mb-1">CA Ce mois</div>
+                            <div class="text-3xl font-bold mb-2" id="caMonth">0 XPF</div>
+                        </div>
+                        <div class="bg-gradient-to-br from-pink-500 to-pink-600 text-white rounded-2xl p-6 shadow-lg">
+                            <div class="text-sm text-pink-100 mb-1">CA Total</div>
+                            <div class="text-3xl font-bold mb-2" id="caTotal">0 XPF</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DASHBOARD SECRÉTAIRES (sans CA) -->
+                <div id="dashboardSecretaire" class="hidden">
+                    <div class="mb-6 flex justify-between items-center">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-900">📊 Dashboard - Voyage actif</h2>
+                            <p class="text-sm text-gray-600 mt-1">Statistiques du voyage en cours</p>
+                        </div>
+                        <div class="voyage-badge text-center">
+                            <div class="text-xs opacity-90">Voyage</div>
+                            <div class="text-lg" id="dashVoyageSecretaire">VOY-2025-W42</div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+                        <div class="bg-gradient-to-br from-yellow-500 to-yellow-600 text-white rounded-2xl p-6 shadow-lg">
+                            <div class="text-4xl font-bold mb-2" id="waitingCountSecretaire">0</div>
+                            <div class="text-yellow-100">En attente validation</div>
+                        </div>
+                        <div class="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-2xl p-6 shadow-lg">
+                            <div class="text-4xl font-bold mb-2" id="validatedCountSecretaire">0</div>
+                            <div class="text-green-100">Bon à embarquer</div>
+                        </div>
+                        <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-2xl p-6 shadow-lg">
+                            <div class="text-4xl font-bold mb-2" id="onboardCountSecretaire">0</div>
+                            <div class="text-blue-100">À bord COBIA 3</div>
+                        </div>
+                        <div class="bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-2xl p-6 shadow-lg">
+                            <div class="text-4xl font-bold mb-2" id="totalVoyageSecretaire">0</div>
+                            <div class="text-purple-100">Total voyage</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-blue-50 border-2 border-blue-200 rounded-xl p-6">
+                        <h3 class="font-bold text-blue-900 mb-2">ℹ️ Information</h3>
+                        <p class="text-blue-800 text-sm">Le chiffre d'affaires est accessible uniquement aux gérants (Dominique et Dany).</p>
+                        <p class="text-blue-800 text-sm mt-2">Les statistiques affichées correspondent au voyage actif (<span id="infoVoyage" class="font-bold">VOY-2025-W42</span>).</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- INTERFACE DOUCHETTE MARIN -->
+            <div id="marinInterface" class="hidden">
+                <div class="scanner-interface max-w-2xl mx-auto">
+                    <div class="mb-6 text-center">
+                        <h2 class="text-3xl font-bold mb-2">⚓ INTERFACE MARIN</h2>
+                        <p class="text-green-400" id="marinName">Teiki MANA</p>
+                        <div class="mt-4 voyage-badge inline-block">
+                            <div class="text-xs opacity-90">🚢 VOYAGE</div>
+                            <div class="text-xl" id="marinVoyageDisplay">VOY-2025-W42</div>
+                        </div>
+                    </div>
+
+                    <div class="mb-6">
+                        <label class="block text-sm font-bold mb-2 text-green-400">MODE :</label>
+                        <select id="marinMode" class="w-full px-4 py-3 bg-gray-800 text-white border-2 border-green-500 rounded-xl text-lg font-bold">
+                            <option value="chargement">📦 CHARGEMENT (Quai Papeete)</option>
+                            <option value="dechargement">📍 DÉCHARGEMENT (Destination)</option>
+                        </select>
+                    </div>
+
+                    <div class="scanner-display" id="marinDisplay">
+                        📱 SCANNER UN COLIS
+                    </div>
+                    
+                    <!-- ✅ NOUVEAU: Bouton caméra pour marin -->
+                    <div class="mb-4 flex gap-3">
+                        <button onclick="startMarinCameraScanner()" class="camera-btn flex-1">
+                            📷 Scanner avec caméra
+                        </button>
+                    </div>
+                    
+                    <input type="text" id="marinScanInput" class="w-full px-4 py-4 text-2xl font-bold text-center bg-gray-800 text-white border-4 border-green-500 rounded-xl mb-4 uppercase" placeholder="OU SAISISSEZ LE CODE" onchange="handleMarinScan()" autofocus>
+                    
+                    <div id="marinScanResult" class="hidden mt-6"></div>
+
+                    <div class="mt-6 bg-gray-800 border-2 border-gray-700 rounded-xl p-4">
+                        <h3 class="font-bold text-green-400 mb-2">📊 SESSION EN COURS</h3>
+                        <div class="grid grid-cols-2 gap-4 text-center">
+                            <div>
+                                <div class="text-3xl font-bold text-white" id="marinScannedCount">0</div>
+                                <div class="text-xs text-gray-400">Colis scannés</div>
+                            </div>
+                            <div>
+                                <div class="text-3xl font-bold text-green-400" id="marinTime">00:00</div>
+                                <div class="text-xs text-gray-400">Temps de session</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- INTERFACE ENTREPRISE -->
+            <div id="entrepriseInterface" class="hidden">
+                <!-- Badge de notification pour l'entreprise -->
+                <div id="entrepriseNotification" class="hidden mb-6 bg-green-50 border-2 border-green-500 rounded-xl p-6 animate-pulse">
+                    <div class="flex items-start gap-4">
+                        <div class="text-4xl">✅</div>
+                        <div class="flex-1">
+                            <h3 class="text-xl font-bold text-green-900 mb-2">Paiement validé !</h3>
+                            <p class="text-green-800 mb-4">Votre connaissement a été validé par le bureau. Vous pouvez maintenant imprimer l'étiquette code-barres.</p>
+                            <button onclick="dismissEntrepriseNotification()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                                J'ai compris
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-lg p-8 max-w-4xl mx-auto">
+                    <div class="mb-6 flex justify-between items-center">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-900">🏢 Portail Entreprise</h2>
+                            <p class="text-sm text-gray-600 mt-2" id="entrepriseName">Magasin Tahiti</p>
+                        </div>
+                        <div class="voyage-badge text-center">
+                            <div class="text-xs opacity-90">Voyage</div>
+                            <div class="text-lg" id="entrepriseVoyageDisplay">VOY-2025-W42</div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                        <div class="bg-blue-50 border-2 border-blue-200 rounded-xl p-6 text-center">
+                            <div class="text-3xl font-bold text-blue-600" id="entrepriseTotalColis">0</div>
+                            <div class="text-sm text-blue-800 mt-2">Colis ce voyage</div>
+                        </div>
+                        <div class="bg-green-50 border-2 border-green-200 rounded-xl p-6 text-center">
+                            <div class="text-3xl font-bold text-green-600" id="entrepriseTotalVolume">0 m³</div>
+                            <div class="text-sm text-green-800 mt-2">Volume ce voyage</div>
+                        </div>
+                    </div>
+
+                    <div class="mb-6">
+                        <h3 class="text-lg font-bold text-gray-900 mb-4">📦 Créer un nouveau connaissement</h3>
+                        <form id="entrepriseForm" onsubmit="createEntrepriseShipment(event)" class="space-y-6">
+                            <!-- DESTINATAIRE -->
+                            <div class="border-l-4 border-blue-500 pl-4">
+                                <h4 class="font-semibold text-gray-900 mb-3">👤 Informations destinataire</h4>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <input type="text" id="entDestName" placeholder="Nom destinataire *" class="px-4 py-3 border-2 rounded-xl" required>
+                                    <input type="tel" id="entDestPhone" placeholder="Téléphone *" class="px-4 py-3 border-2 rounded-xl" required>
+                                    <select id="entDestination" class="px-4 py-3 border-2 rounded-xl col-span-2" required>
+                                        <option value="">Destination *</option>
+                                        <option>Rangiroa</option>
+                                        <option>Tikehau</option>
+                                        <option>Manihi</option>
+                                        <option>Fakarava</option>
+                                        <option>Makemo</option>
+                                        <option>Hao</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- DIMENSIONS ET POIDS -->
+                            <div class="border-l-4 border-orange-500 pl-4">
+                                <h4 class="font-semibold text-gray-900 mb-3">📏 Dimensions et poids du colis</h4>
+                                <div class="grid grid-cols-4 gap-4 mb-4">
+                                    <div>
+                                        <label class="block text-xs text-gray-600 mb-1">Longueur (cm) *</label>
+                                        <input type="number" id="entLength" class="w-full px-4 py-3 border-2 rounded-xl" required min="1" step="1" oninput="calculateEntreprisePrice()">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs text-gray-600 mb-1">Largeur (cm) *</label>
+                                        <input type="number" id="entWidth" class="w-full px-4 py-3 border-2 rounded-xl" required min="1" step="1" oninput="calculateEntreprisePrice()">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs text-gray-600 mb-1">Hauteur (cm) *</label>
+                                        <input type="number" id="entHeight" class="w-full px-4 py-3 border-2 rounded-xl" required min="1" step="1" oninput="calculateEntreprisePrice()">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs text-gray-600 mb-1">Poids (kg) *</label>
+                                        <input type="number" id="entWeight" class="w-full px-4 py-3 border-2 rounded-xl" required min="0.1" step="0.1" oninput="calculateEntreprisePrice()">
+                                    </div>
+                                </div>
+
+                                <!-- CALCUL PRIX EN TEMPS RÉEL -->
+                                <div class="bg-green-50 border-2 border-green-200 rounded-xl p-4">
+                                    <h4 class="font-bold text-green-900 mb-2">💰 Coût de transport</h4>
+                                    <div class="grid grid-cols-3 gap-4 text-sm mb-3">
+                                        <div>
+                                            <div class="text-xs text-gray-600">Volume</div>
+                                            <div class="font-bold text-orange-600" id="entCalcVolume">0.00 m³</div>
+                                        </div>
+                                        <div>
+                                            <div class="text-xs text-gray-600">Poids volumétrique</div>
+                                            <div class="font-bold text-blue-600" id="entCalcVolWeight">0 kg</div>
+                                        </div>
+                                        <div>
+                                            <div class="text-xs text-gray-600">Poids taxable</div>
+                                            <div class="font-bold text-green-600" id="entCalcTaxWeight">0 kg</div>
+                                        </div>
+                                    </div>
+                                    <div class="border-t-2 border-green-300 pt-3 space-y-1">
+                                        <div class="flex justify-between text-sm">
+                                            <span>Prix HT (140 XPF/kg):</span>
+                                            <span id="entPriceHT">0 XPF</span>
+                                        </div>
+                                        <div class="flex justify-between text-sm">
+                                            <span>TVA 13%:</span>
+                                            <span id="entPriceTVA">0 XPF</span>
+                                        </div>
+                                        <div class="flex justify-between font-bold text-lg pt-2 border-t-2 border-green-300">
+                                            <span>TOTAL À PAYER:</span>
+                                            <span class="text-green-600" id="entPriceTTC">0 XPF</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- DESCRIPTION -->
+                            <div class="border-l-4 border-purple-500 pl-4">
+                                <h4 class="font-semibold text-gray-900 mb-3">📝 Nature de la marchandise</h4>
+                                <select id="entDescription" class="w-full px-4 py-3 border-2 rounded-xl" required>
+                                    <option value="">Sélectionner la catégorie *</option>
+                                    <option>Vivres périssables</option>
+                                    <option>Vivres non périssables</option>
+                                    <option>Matériaux de construction</option>
+                                    <option>Équipements électriques</option>
+                                    <option>Mobilier et ameublement</option>
+                                    <option>Fret général</option>
+                                </select>
+                            </div>
+
+                            <!-- MODE DE PAIEMENT -->
+                            <div class="border-l-4 border-green-500 pl-4">
+                                <h4 class="font-semibold text-gray-900 mb-3">💳 Mode de paiement</h4>
+                                <select id="entPaymentMethod" class="w-full px-4 py-3 border-2 border-green-200 rounded-xl" required>
+                                    <option value="">Choisir le mode de paiement *</option>
+                                    <option value="card">💳 Carte bancaire</option>
+                                    <option value="transfer">🏦 Virement bancaire</option>
+                                    <option value="account">📋 Compte client (facturation mensuelle)</option>
+                                </select>
+                                <p class="text-xs text-orange-600 mt-2 font-semibold">⚠️ Le paiement sera validé par le bureau avant embarquement. Vous pourrez imprimer l'étiquette après validation.</p>
+                            </div>
+
+                            <button type="submit" class="w-full bg-gradient-to-r from-green-600 to-green-700 text-white font-semibold py-4 rounded-xl hover:from-green-700 hover:to-green-800 shadow-lg">
+                                ✅ Créer le connaissement <span id="entSubmitPrice" class="font-bold">0 XPF</span>
+                            </button>
+                        </form>
+                    </div>
+
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-900 mb-4">📋 Mes envois récents</h3>
+                        <div id="entrepriseShipments" class="space-y-2">
+                            <p class="text-gray-500 text-center py-8">Aucun envoi récent</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- ✅ NOUVEAU: MODAL SCANNER CAMÉRA -->
+    <div id="camera-scanner-modal" class="hidden fixed inset-0 z-50">
+        <div class="modal-backdrop absolute inset-0" onclick="stopCameraScanner()"></div>
+        <div class="relative min-h-screen flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                <div class="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
+                    <h2 class="text-2xl font-bold text-gray-900">📷 Scanner Code-Barres</h2>
+                    <button onclick="stopCameraScanner()" class="text-gray-400 hover:text-gray-600 text-3xl">&times;</button>
+                </div>
+                <div class="p-6">
+                    <div id="camera-reader" class="mb-4"></div>
+                    <div id="camera-scan-status" class="text-center text-sm text-gray-600 mb-4">
+                        Placez le code-barres devant la caméra...
+                    </div>
+                    <button onclick="stopCameraScanner()" class="w-full px-6 py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300">
+                        Annuler
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODALS (TOUS LES AUTRES MODALS EXISTANTS) -->
+    <!-- MODAL CORRECTION D'ANOMALIES -->
+    <div id="anomalyModal" class="hidden fixed inset-0 z-50">
+        <div class="modal-backdrop absolute inset-0" onclick="closeAnomalyModal()"></div>
+        <div class="relative min-h-screen flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+                <div class="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
+                    <h2 class="text-2xl font-bold text-gray-900">🔧 Correction d'anomalies</h2>
+                    <button onclick="closeAnomalyModal()" class="text-gray-400 hover:text-gray-600 text-3xl">&times;</button>
+                </div>
+                <div class="p-6" id="anomalyModalContent"></div>
+                <div class="sticky bottom-0 bg-white border-t px-6 py-4 flex justify-end gap-4">
+                    <button onclick="closeAnomalyModal()" class="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300">Annuler</button>
+                    <button onclick="saveAnomalyCorrection()" class="px-8 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white font-semibold rounded-xl hover:from-green-700 hover:to-green-800">✅ Valider les corrections</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DÉTAILS COLIS -->
+    <div id="detailsModal" class="hidden fixed inset-0 z-50">
+        <div class="modal-backdrop absolute inset-0" onclick="closeDetailsModal()"></div>
+        <div class="relative min-h-screen flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+                <div class="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
+                    <h2 class="text-2xl font-bold text-gray-900">📦 Détails du colis</h2>
+                    <button onclick="closeDetailsModal()" class="text-gray-400 hover:text-gray-600 text-3xl">&times;</button>
+                </div>
+                <div class="p-6" id="detailsModalContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL CHANGEMENT DE VOYAGE -->
+    <div id="voyageModal" class="hidden fixed inset-0 z-50">
+        <div class="modal-backdrop absolute inset-0" onclick="closeVoyageModal()"></div>
+        <div class="relative min-h-screen flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+                <div class="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-6 py-4 rounded-t-2xl">
+                    <h2 class="text-2xl font-bold">🚢 Changer de voyage</h2>
+                </div>
+                <div class="p-6">
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Sélectionner un voyage</label>
+                        <select id="voyageSelect" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl">
+                            <option value="VOY-2025-W42">VOY-2025-W42 (14-20 Oct 2025) - ACTUEL</option>
+                            <option value="VOY-2025-W43">VOY-2025-W43 (21-27 Oct 2025)</option>
+                            <option value="VOY-2025-W44">VOY-2025-W44 (28 Oct - 3 Nov 2025)</option>
+                        </select>
+                    </div>
+                    <div class="bg-orange-50 border-2 border-orange-200 rounded-xl p-4 mb-6">
+                        <h3 class="font-bold text-orange-900 mb-2">⚠️ Attention</h3>
+                        <p class="text-sm text-orange-800">Le changement de voyage affectera tous les nouveaux colis créés.</p>
+                    </div>
+                    <div class="flex gap-4">
+                        <button onclick="closeVoyageModal()" class="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300">Annuler</button>
+                        <button onclick="confirmVoyageChange()" class="flex-1 px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-xl hover:from-purple-700 hover:to-purple-800">Confirmer</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL CLÔTURE VOYAGE -->
+    <div id="closeVoyageModal" class="hidden fixed inset-0 z-50">
+        <div class="modal-backdrop absolute inset-0" onclick="cancelCloseVoyage()"></div>
+        <div class="relative min-h-screen flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl">
+                <div class="bg-gradient-to-r from-orange-600 to-orange-700 text-white px-6 py-4 rounded-t-2xl">
+                    <h2 class="text-2xl font-bold">🔒 Clôture du voyage</h2>
+                </div>
+                <div class="p-6">
+                    <div class="mb-6">
+                        <h3 class="font-bold text-gray-900 mb-4">📊 Résumé du voyage <span id="closeVoyageName" class="text-purple-600"></span></h3>
+                        <div class="grid grid-cols-2 gap-4 mb-6">
+                            <div class="bg-blue-50 border-2 border-blue-200 rounded-xl p-4">
+                                <div class="text-2xl font-bold text-blue-600" id="closeVoyageTotalColis">0</div>
+                                <div class="text-sm text-blue-800">Colis totaux</div>
+                            </div>
+                            <div class="bg-green-50 border-2 border-green-200 rounded-xl p-4">
+                                <div class="text-2xl font-bold text-green-600" id="closeVoyageTotalWeight">0 kg</div>
+                                <div class="text-sm text-green-800">Poids total</div>
+                            </div>
+                        </div>
+                        <div class="bg-orange-50 border-2 border-orange-200 rounded-xl p-4 mb-6">
+                            <h4 class="font-bold text-orange-900 mb-2">⚠️ Action irréversible</h4>
+                            <ul class="text-sm text-orange-800 space-y-1">
+                                <li>✅ Le voyage sera marqué comme clôturé</li>
+                                <li>✅ Les données seront synchronisées avec l'API DPAM Revatua</li>
+                                <li>✅ Un nouveau voyage sera automatiquement créé</li>
+                                <li>⚠️ Les données CA ne seront PAS transmises (confidentialité)</li>
+                            </ul>
+                        </div>
+                        <div class="border-l-4 border-blue-500 pl-4 mb-6">
+                            <h4 class="font-semibold text-gray-900 mb-2">📡 Synchronisation API DPAM</h4>
+                            <div id="dpamSyncStatus" class="text-sm text-gray-600">Prêt à synchroniser...</div>
+                        </div>
+                    </div>
+                    <div class="flex gap-4">
+                        <button onclick="cancelCloseVoyage()" class="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300">Annuler</button>
+                        <button onclick="confirmCloseVoyage()" class="flex-1 px-6 py-3 bg-gradient-to-r from-orange-600 to-orange-700 text-white rounded-xl hover:from-orange-700 hover:to-orange-800 font-bold">🔒 Clôturer et synchroniser</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL IMPRESSION CODE-BARRES ENTREPRISE -->
+    <div id="barcodeModal" class="hidden fixed inset-0 z-50">
+        <div class="modal-backdrop absolute inset-0" onclick="closeBarcodeModal()"></div>
+        <div class="relative min-h-screen flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl">
+                <div class="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
+                    <h2 class="text-2xl font-bold text-gray-900">🏷️ Étiquette Code-Barres</h2>
+                    <button onclick="closeBarcodeModal()" class="text-gray-400 hover:text-gray-600 text-3xl">&times;</button>
+                </div>
+                <div class="p-6">
+                    <div id="printArea" class="barcode-label"></div>
+                    <div class="flex gap-4 mt-6">
+                        <button onclick="closeBarcodeModal()" class="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300">Fermer</button>
+                        <button onclick="window.print()" class="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 font-bold">🖨️ Imprimer l'étiquette</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast"></div>
+
+    <script>
+        // ╔══════════════════════════════════════════════════════════╗
+        // VARIABLES GLOBALES
+        // ╚══════════════════════════════════════════════════════════╝
+        
+        let currentVoyage = localStorage.getItem('currentVoyage') || generateVoyageNumber();
+        let currentUser = null;
+        let currentPackage = null;
+        let marinScannedCount = 0;
+        let marinSessionStart = null;
+        let statsInterval = null;
+        let notificationCheckInterval = null;
+        
+        // ✅ NOUVEAU: Variables pour le scanner caméra
+        let html5QrcodeScanner = null;
+        let isCameraScanning = false;
+        let currentScanMode = 'bureau'; // 'bureau' ou 'marin'
+
+        // ╔══════════════════════════════════════════════════════════╗
+        // BASE DE DONNÉES LOCALE
+        // ╚══════════════════════════════════════════════════════════╝
+        
+        class LocalDB {
+            constructor() {
+                this.packages = JSON.parse(localStorage.getItem('tms_packages') || '[]');
+                this.notifications = JSON.parse(localStorage.getItem('tms_notifications') || '[]');
+            }
+
+            save(pkg) {
+                this.packages.push(pkg);
+                localStorage.setItem('tms_packages', JSON.stringify(this.packages));
+                return pkg;
+            }
+
+            getAll() {
+                return this.packages;
+            }
+
+            getByVoyage(voyageNumber) {
+                return this.packages.filter(p => p.voyage === voyageNumber);
+            }
+
+            findByCode(code) {
+                return this.packages.find(p => p.code === code || p.numero === code);
+            }
+
+            update(code, updates) {
+                const pkg = this.findByCode(code);
+                if (pkg) {
+                    Object.assign(pkg, updates);
+                    localStorage.setItem('tms_packages', JSON.stringify(this.packages));
+                }
+                return pkg;
+            }
+
+            getByStatus(status) {
+                return this.packages.filter(p => p.status === status);
+            }
+
+            addNotification(notification) {
+                this.notifications.push(notification);
+                localStorage.setItem('tms_notifications', JSON.stringify(this.notifications));
+            }
+
+            getNotifications(entreprise) {
+                return this.notifications.filter(n => n.entreprise === entreprise && !n.read);
+            }
+
+            markNotificationAsRead(id) {
+                const notif = this.notifications.find(n => n.id === id);
+                if (notif) {
+                    notif.read = true;
+                    localStorage.setItem('tms_notifications', JSON.stringify(this.notifications));
+                }
+            }
+        }
+
+        const db = new LocalDB();
+
+        // ╔══════════════════════════════════════════════════════════╗
+        // ✅ NOUVEAU: SCANNER CAMÉRA
+        // ╚══════════════════════════════════════════════════════════╝
+        
+        function startCameraScanner() {
+            currentScanMode = 'bureau';
+            document.getElementById('camera-scanner-modal').classList.remove('hidden');
+            initCameraScanner();
+        }
+
+        function startMarinCameraScanner() {
+            currentScanMode = 'marin';
+            document.getElementById('camera-scanner-modal').classList.remove('hidden');
+            initCameraScanner();
+        }
+
+        function initCameraScanner() {
+            if (isCameraScanning) return;
+            
+            const config = {
+                fps: 10,
+                qrbox: { width: 300, height: 150 },
+                aspectRatio: 1.777778,
+                formatsToSupport: [
+                    Html5QrcodeSupportedFormats.CODE_128,
+                    Html5QrcodeSupportedFormats.CODE_39,
+                    Html5QrcodeSupportedFormats.EAN_13,
+                    Html5QrcodeSupportedFormats.EAN_8,
+                    Html5QrcodeSupportedFormats.UPC_A,
+                    Html5QrcodeSupportedFormats.UPC_E,
+                    Html5QrcodeSupportedFormats.QR_CODE
+                ]
+            };
+
+            html5QrcodeScanner = new Html5Qrcode("camera-reader");
+            
+            html5QrcodeScanner.start(
+                { facingMode: "environment" },
+                config,
+                onCameraScanSuccess,
+                onCameraScanError
+            ).then(() => {
+                isCameraScanning = true;
+                document.getElementById('camera-scan-status').textContent = 'Caméra active - Placez le code-barres dans le cadre';
+            }).catch(err => {
+                console.error('Erreur caméra:', err);
+                showToast('❌ Impossible d\'accéder à la caméra', 'error');
+                stopCameraScanner();
+            });
+        }
+
+        function onCameraScanSuccess(decodedText, decodedResult) {
+            // Arrêter le scanner
+            stopCameraScanner();
+            
+            // Traiter le code scanné selon le mode
+            if (currentScanMode === 'marin') {
+                document.getElementById('marinScanInput').value = decodedText;
+                handleMarinScan();
+            } else {
+                document.getElementById('scanInput').value = decodedText;
+                handleScan();
+            }
+            
+            showToast('✅ Code scanné: ' + decodedText, 'success');
+        }
+
+        function onCameraScanError(errorMessage) {
+            // Erreurs normales de scan - on les ignore
+        }
+
+        function stopCameraScanner() {
+            if (html5QrcodeScanner && isCameraScanning) {
+                html5QrcodeScanner.stop().then(() => {
+                    html5QrcodeScanner.clear();
+                    html5QrcodeScanner = null;
+                    isCameraScanning = false;
+                }).catch(err => {
+                    console.error('Erreur arrêt caméra:', err);
+                });
+            }
+            document.getElementById('camera-scanner-modal').classList.add('hidden');
+        }
+
+        // ╔══════════════════════════════════════════════════════════╗
+        // GESTION DES VOYAGES
+        // ╚══════════════════════════════════════════════════════════╝
+        
+        function getCurrentWeekNumber() {
+            const now = new Date();
+            const start = new Date(now.getFullYear(), 0, 1);
+            const diff = now - start;
+            const oneWeek = 1000 * 60 * 60 * 24 * 7;
+            return Math.ceil(diff / oneWeek);
+        }
+
+        function generateVoyageNumber() {
+            const year = new Date().getFullYear();
+            const week = getCurrentWeekNumber();
+            return `VOY-${year}-W${week}`;
+        }
+
+        function getWeekDates() {
+            const now = new Date();
+            const dayOfWeek = now.getDay();
+            const diff = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+            const monday = new Date(now.setDate(diff));
+            const sunday = new Date(monday);
+            sunday.setDate(monday.getDate() + 6);
+            
+            const format = (date) => {
+                const d = date.getDate();
+                const m = date.toLocaleString('fr-FR', { month: 'short' });
+                const y = date.getFullYear();
+                return `${d} ${m} ${y}`;
+            };
+            
+            return `${format(monday)} - ${format(sunday)}`;
+        }
+        
+        function updateVoyageDisplays() {
+            const weekDates = getWeekDates();
+            const displays = [
+                'currentVoyageDisplay', 'formVoyageDisplay', 'scanVoyageDisplay', 'tableVoyageDisplay',
+                'dashVoyageGerants', 'dashVoyageSecretaire', 'marinVoyageDisplay',
+                'entrepriseVoyageDisplay', 'infoVoyage', 'paiementsVoyageDisplay'
+            ];
+            
+            displays.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = currentVoyage;
+            });
+            
+            const dateDisplay = document.getElementById('voyageDatesDisplay');
+            if (dateDisplay) dateDisplay.textContent = weekDates;
+        }
+
+        function changeVoyage() {
+            document.getElementById('voyageModal').classList.remove('hidden');
+        }
+
+        function closeVoyageModal() {
+            document.getElementById('voyageModal').classList.add('hidden');
+        }
+
+        function confirmVoyageChange() {
+            const newVoyage = document.getElementById('voyageSelect').value;
+            currentVoyage = newVoyage;
+            localStorage.setItem('currentVoyage', currentVoyage);
+            updateVoyageDisplays();
+            updateStats();
+            updateConnaissementTable();
+            updatePaiementsList();
+            closeVoyageModal();
+            showToast(`🚢 Voyage changé : ${currentVoyage}`, 'success');
+        }
+
+        function closeVoyage() {
+            const packages = db.getByVoyage(currentVoyage);
+            
+            if (packages.length === 0) {
+                showToast('⚠️ Aucun colis dans ce voyage', 'warning');
+                return;
+            }
+
+            document.getElementById('closeVoyageName').textContent = currentVoyage;
+            document.getElementById('closeVoyageTotalColis').textContent = packages.length;
+            
+            const totalWeight = packages.reduce((sum, p) => sum + parseFloat(p.weights.taxable), 0);
+            document.getElementById('closeVoyageTotalWeight').textContent = totalWeight.toFixed(1) + ' kg';
+            
+            document.getElementById('closeVoyageModal').classList.remove('hidden');
+        }
+
+        function cancelCloseVoyage() {
+            document.getElementById('closeVoyageModal').classList.add('hidden');
+        }
+
+        async function confirmCloseVoyage() {
+            const statusDiv = document.getElementById('dpamSyncStatus');
+            statusDiv.innerHTML = '⏳ Préparation des données...';
+            
+            const packages = db.getByVoyage(currentVoyage);
+            
+            const dpamData = {
+                voyage: currentVoyage,
+                date_cloture: new Date().toISOString(),
+                colis: packages.map(p => ({
+                    numero: p.numero,
+                    code: p.code,
+                    expediteur: p.senderName,
+                    destinataire: p.receiverName,
+                    destination: p.destination,
+                    poids_taxable: p.weights.taxable,
+                    volume: p.dimensions.volume,
+                    dimensions: p.dimensions,
+                    statut: p.status,
+                    description: p.description,
+                    dpam_compliant: p.dpamCompliant
+                })),
+                statistiques: {
+                    total_colis: packages.length,
+                    poids_total: packages.reduce((sum, p) => sum + parseFloat(p.weights.taxable), 0),
+                    volume_total: packages.reduce((sum, p) => sum + parseFloat(p.dimensions.volume), 0)
+                }
+            };
+
+            statusDiv.innerHTML = '📡 Synchronisation avec API DPAM Revatua...';
+            await simulateDPAMSync(dpamData);
+            statusDiv.innerHTML = '✅ Synchronisation réussie !';
+            
+            localStorage.setItem(`voyage_${currentVoyage}_closed`, 'true');
+            localStorage.setItem(`voyage_${currentVoyage}_closed_date`, new Date().toISOString());
+            
+            const nextWeek = getCurrentWeekNumber() + 1;
+            const year = new Date().getFullYear();
+            const newVoyage = `VOY-${year}-W${nextWeek}`;
+            
+            currentVoyage = newVoyage;
+            localStorage.setItem('currentVoyage', newVoyage);
+            
+            setTimeout(() => {
+                cancelCloseVoyage();
+                updateVoyageDisplays();
+                updateStats();
+                updateConnaissementTable();
+                updatePaiementsList();
+                showToast(`🔒 Voyage clôturé et synchronisé avec DPAM ! Nouveau voyage: ${newVoyage}`, 'success');
+            }, 1500);
+        }
+
+        async function simulateDPAMSync(data) {
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    console.log('📡 Données envoyées à l\'API DPAM Revatua:', data);
+                    console.log('⚠️ CA NON INCLUS (confidentialité)');
+                    resolve({ success: true });
+                }, 2000);
+            });
+        }
+
+        // ╔══════════════════════════════════════════════════════════╗
+        // AUTHENTIFICATION
+        // ╚══════════════════════════════════════════════════════════╝
+        
+        function handleLogin(event) {
+            event.preventDefault();
+            
+            const userType = document.getElementById('userType').value;
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            const validUsers = {
+                'marie': { type: 'secretaire', name: 'Marie TAMA', role: 'Secrétaire', isGerant: false, password: 'marie123' },
+                'dany': { type: 'bureau', name: 'Dany', role: 'Co-Gérant', isGerant: true, password: 'dany123' },
+                'dominique': { type: 'bureau', name: 'Dominique', role: 'Co-Gérant', isGerant: true, password: 'dominique123' },
+                'teiki': { type: 'marin', name: 'Teiki MANA', role: 'Marin', isGerant: false, password: 'teiki123' },
+                'magasin': { type: 'entreprise', name: 'Magasin Tahiti', role: 'Entreprise Cliente', isGerant: false, password: 'magasin123' }
+            };
+
+            if (validUsers[username] && validUsers[username].type === userType && validUsers[username].password === password) {
+                currentUser = validUsers[username];
+                
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('mainApp').classList.remove('hidden');
+                document.getElementById('userInfo').textContent = currentUser.name;
+                document.getElementById('userRole').textContent = currentUser.role;
+                
+                document.getElementById('voyageSelector').classList.remove('hidden');
+                
+                if (currentUser.isGerant) {
+                    document.getElementById('closeVoyageBtn').classList.remove('hidden');
+                }
+                
+                updateVoyageDisplays();
+                
+                if (userType === 'secretaire' || userType === 'bureau') {
+                    document.getElementById('navTabs').classList.remove('hidden');
+                    document.getElementById('tab-enregistrement').classList.remove('hidden');
+                    document.getElementById('headerSubtitle').textContent = 'Interface Secrétaire/Bureau';
+                    
+                    if (currentUser.isGerant) {
+                        document.getElementById('dashboardGerants').classList.remove('hidden');
+                    } else {
+                        document.getElementById('dashboardSecretaire').classList.remove('hidden');
+                    }
+                    
+                    updatePaiementsList();
+                    notificationCheckInterval = setInterval(updatePaiementsList, 5000);
+                    
+                } else if (userType === 'marin') {
+                    document.getElementById('marinInterface').classList.remove('hidden');
+                    document.getElementById('headerSubtitle').textContent = 'Interface Douchette Marin';
+                    document.getElementById('marinName').textContent = currentUser.name;
+                    startMarinSession();
+                } else if (userType === 'entreprise') {
+                    document.getElementById('entrepriseInterface').classList.remove('hidden');
+                    document.getElementById('headerSubtitle').textContent = 'Portail Entreprise';
+                    document.getElementById('entrepriseName').textContent = currentUser.name;
+                    loadEntrepriseData();
+                    checkEntrepriseNotifications();
+                }
+                
+                updateStats();
+                showToast('✅ Connexion réussie !', 'success');
+            } else {
+                showToast('❌ Identifiants incorrects', 'error');
+            }
+        }
+
+        function logout() {
+            if (notificationCheckInterval) clearInterval(notificationCheckInterval);
+            if (isCameraScanning) stopCameraScanner();
+            location.reload();
+        }
+
+        // ╔══════════════════════════════════════════════════════════╗
+        // NAVIGATION TABS
+        // ╚══════════════════════════════════════════════════════════╝
+        
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('border-blue-600', 'text-blue-600');
+                btn.classList.add('border-transparent', 'text-gray-600');
+            });
+            
+            document.getElementById('tab-' + tabName).classList.remove('hidden');
+            event.target.classList.remove('border-transparent', 'text-gray-600');
+            event.target.classList.add('border-blue-600', 'text-blue-600');
+
+            if (statsInterval) {
+                clearInterval(statsInterval);
+                statsInterval = null;
+            }
+
+            if (tabName === 'connaissements') {
+                updateConnaissementTable();
+            } else if (tabName === 'dashboard') {
+                updateStats();
+                statsInterval = setInterval(() => {
+                    updateStats();
+                }, 2000);
+            } else if (tabName === 'paiements') {
+                updatePaiementsList();
+            }
+        }
+
+        // ╔══════════════════════════════════════════════════════════╗
+        // VALIDATION PAIEMENTS
+        // ╚══════════════════════════════════════════════════════════╝
+        
+        function updatePaiementsList() {
+            const packages = db.getByVoyage(currentVoyage).filter(p => 
+                p.type === 'entreprise' && 
+                p.status === 'En attente paiement'
+            );
+            
+            const badge = document.getElementById('paiementsNotifBadge');
+            if (packages.length > 0) {
+                badge.textContent = packages.length;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+            
+            const listDiv = document.getElementById('paiementsList');
+            if (!listDiv) return;
+            
+            if (packages.length === 0) {
+                listDiv.innerHTML = `<p class="text-gray-500 text-center py-8">Aucun paiement en attente pour ${currentVoyage}</p>`;
+                return;
+            }
+            
+            listDiv.innerHTML = packages.map(p => `
+                <div class="payment-pending rounded-xl p-6">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="flex-1">
+                            <div class="font-bold text-gray-900 text-lg">${p.numero}</div>
+                            <div class="text-sm text-gray-600">Code: ${p.code}</div>
+                            <div class="text-sm text-purple-600 font-semibold">🏢 Entreprise: ${p.entreprise}</div>
+                        </div>
+                        <span class="status-badge status-en-attente-paiement">En attente paiement</span>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4 text-sm mb-4">
+                        <div>
+                            <div class="text-gray-600">Destinataire</div>
+                            <div class="font-semibold">${p.receiverName}</div>
+                            <div class="text-gray-500">${p.receiverPhone}</div>
+                        </div>
+                        <div>
+                            <div class="text-gray-600">Destination</div>
+                            <div class="font-semibold">${p.destination}</div>
+                        </div>
+                        <div>
+                            <div class="text-gray-600">Poids taxable</div>
+                            <div class="font-semibold">${p.weights.taxable} kg</div>
+                        </div>
+                        <div>
+                            <div class="text-gray-600">Volume</div>
+                            <div class="font-semibold">${p.dimensions.volume} m³</div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-lg p-4 mb-4 border-2 border-orange-300">
+                        <h4 class="font-bold text-gray-900 mb-2">💳 Informations paiement</h4>
+                        <div class="space-y-1 text-sm">
+                            <div class="flex justify-between">
+                                <span>Mode:</span>
+                                <span class="font-semibold">${p.paymentMethodLabel}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Montant HT:</span>
+                                <span>${p.pricing.priceHT.toLocaleString()} XPF</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>TVA 13%:</span>
+                                <span>${p.pricing.priceTVA.toLocaleString()} XPF</span>
+                            </div>
+                            <div class="flex justify-between pt-2 border-t-2 font-bold text-lg">
+                                <span>TOTAL À RECEVOIR:</span>
+                                <span class="text-green-600">${p.pricing.priceTTC.toLocaleString()} XPF</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex gap-3">
+                        <button onclick="validatePayment('${p.code}')" class="flex-1 bg-gradient-to-r from-green-600 to-green-700 text-white font-semibold py-3 rounded-xl hover:from-green-700 hover:to-green-800">
+                            ✅ Valider le paiement
+                        </button>
+                        <button onclick="rejectPayment('${p.code}')" class="px-6 py-3 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700">
+                            ❌ Rejeter
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function validatePayment(code) {
+            const pkg = db.findByCode(code);
+            if (!pkg) return;
+
+            pkg.status = 'Paiement validé';
+            pkg.paymentValidatedAt = new Date().toISOString();
+            pkg.paymentValidatedBy = currentUser.name;
+            
+            pkg.statusHistory.push({
+                status: 'Paiement validé',
+                by: currentUser.name,
+                at: new Date().toISOString(),
+                location: 'Bureau Papeete',
+                note: `Paiement ${pkg.paymentMethodLabel} validé`
+            });
+            
+            db.update(code, pkg);
+            
+            db.addNotification({
+                id: Date.now(),
+                entreprise: pkg.entreprise,
+                type: 'payment_validated',
+                colis: pkg.numero,
+                code: pkg.code,
+                message: `Votre paiement a été validé ! Vous pouvez maintenant imprimer l'étiquette code-barres.`,
+                createdAt: new Date().toISOString(),
+                read: false
+            });
+            
+            updatePaiementsList();
+            updateStats();
+            updateConnaissementTable();
+            showToast(`✅ Paiement validé pour ${pkg.numero} - Notification envoyée à ${pkg.entreprise}`, 'success');
+        }
+
+        function rejectPayment(code) {
+            const pkg = db.findByCode(code);
+            if (!pkg) return;
+
+            const reason = prompt('Motif du refus de paiement:');
+            if (!reason) return;
+
+            pkg.status = 'Paiement refusé';
+            pkg.paymentRejectedAt = new Date().toISOString();
+            pkg.paymentRejectedBy = currentUser.name;
+            pkg.paymentRejectionReason = reason;
+            
+            pkg.statusHistory.push({
+                status: 'Paiement refusé',
+                by: currentUser.name,
+                at: new Date().toISOString(),
+                reason: reason
+            });
+            
+            db.update(code, pkg);
+            
+            db.addNotification({
+                id: Date.now(),
+                entreprise: pkg.entreprise,
+                type: 'payment_rejected',
+                colis: pkg.numero,
+                code: pkg.code,
+                message: `Paiement refusé: ${reason}`,
+                createdAt: new Date().toISOString(),
+                read: false
+            });
+            
+            updatePaiementsList();
+            updateStats();
+            updateConnaissementTable();
+            showToast(`❌ Paiement refusé pour ${pkg.numero}`, 'error');
+        }
+
+        // ╔══════════════════════════════════════════════════════════╗
+        // INTERFACE ENTREPRISE (avec notifications)
+        // ╚══════════════════════════════════════════════════════════╝
+        
+        function checkEntrepriseNotifications() {
+            const notifications = db.getNotifications(currentUser.name);
+            
+            if (notifications.length > 0) {
+                const notif = notifications[0];
+                const notifDiv = document.getElementById('entrepriseNotification');
+                notifDiv.classList.remove('hidden');
+                
+                setTimeout(() => {
+                    db.markNotificationAsRead(notif.id);
+                }, 1000);
+                
+                loadEntrepriseData();
+            }
+        }
+
+        function dismissEntrepriseNotification() {
+            document.getElementById('entrepriseNotification').classList.add('hidden');
+        }
+
+        function calculateEntreprisePrice() {
+            const length = parseFloat(document.getElementById('entLength').value) || 0;
+            const width = parseFloat(document.getElementById('entWidth').value) || 0;
+            const height = parseFloat(document.getElementById('entHeight').value) || 0;
+            const realWeight = parseFloat(document.getElementById('entWeight').value) || 0;
+            
+            const volume = (length * width * height) / 1000000;
+            document.getElementById('entCalcVolume').textContent = volume.toFixed(3) + ' m³';
+            
+            const volumetricWeight = volume * 200;
+            document.getElementById('entCalcVolWeight').textContent = volumetricWeight.toFixed(1) + ' kg';
+            
+            const taxableWeight = Math.max(realWeight, volumetricWeight);
+            document.getElementById('entCalcTaxWeight').textContent = taxableWeight.toFixed(1) + ' kg';
+            
+            const priceHT = taxableWeight * 140;
+            const priceTVA = priceHT * 0.13;
+            const priceTTC = priceHT + priceTVA;
+            
+            document.getElementById('entPriceHT').textContent = Math.round(priceHT).toLocaleString() + ' XPF';
+            document.getElementById('entPriceTVA').textContent = Math.round(priceTVA).toLocaleString() + ' XPF';
+            document.getElementById('entPriceTTC').textContent = Math.round(priceTTC).toLocaleString() + ' XPF';
+            document.getElementById('entSubmitPrice').textContent = Math.round(priceTTC).toLocaleString() + ' XPF';
+            
+            return {
+                volume: volume,
+                volumetricWeight: volumetricWeight,
+                taxableWeight: taxableWeight,
+                priceHT: Math.round(priceHT),
+                priceTVA: Math.round(priceTVA),
+                priceTTC: Math.round(priceTTC)
+            };
+        }
+        
+        function loadEntrepriseData() {
+            const packages = db.getByVoyage(currentVoyage).filter(p => 
+                p.senderName === currentUser.name || p.entreprise === currentUser.name
+            );
+            
+            const totalColis = packages.length;
+            const totalVolume = packages.reduce((sum, p) => sum + parseFloat(p.dimensions.volume), 0);
+            
+            document.getElementById('entrepriseTotalColis').textContent = totalColis;
+            document.getElementById('entrepriseTotalVolume').textContent = totalVolume.toFixed(2) + ' m³';
+            
+            const shipmentsDiv = document.getElementById('entrepriseShipments');
+            if (packages.length === 0) {
+                shipmentsDiv.innerHTML = `<p class="text-gray-500 text-center py-8">Aucun envoi pour ${currentVoyage}</p>`;
+            } else {
+                shipmentsDiv.innerHTML = packages.slice(-5).reverse().map(p => {
+                    const canPrint = p.status === 'Paiement validé' && !p.barcodeGenerated;
+                    const statusClass = p.status === 'En attente paiement' ? 'status-en-attente-paiement' :
+                                       p.status === 'Paiement validé' ? 'status-paiement-validé' :
+                                       p.status.replace(/\s/g, '-').toLowerCase();
+                    
+                    return `
+                        <div class="border-2 ${p.status === 'Paiement validé' ? 'border-green-400 bg-green-50' : 'border-gray-200'} rounded-lg p-4 hover:border-blue-400 transition-colors">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <div class="font-bold text-gray-900">${p.numero}</div>
+                                    <div class="text-xs text-purple-600 font-semibold">${p.voyage}</div>
+                                    <div class="text-sm text-gray-600">→ ${p.destination} | ${p.receiverName}</div>
+                                    <div class="text-sm text-gray-600">Poids: ${p.weights.taxable} kg | Prix: ${p.pricing.priceTTC.toLocaleString()} XPF</div>
+                                    <div class="text-xs text-gray-500 mt-1">${new Date(p.createdAt).toLocaleDateString('fr-FR')}</div>
+                                    ${p.barcodeGenerated ? '<div class="text-xs text-green-600 font-bold mt-2">✅ Code-barres imprimé</div>' : ''}
+                                    ${canPrint ? '<div class="text-xs text-green-600 font-bold mt-2 animate-pulse">✅ PRÊT POUR IMPRESSION !</div>' : ''}
+                                </div>
+                                <div class="space-y-2">
+                                    <span class="status-badge status-${statusClass}">${p.status}</span>
+                                    ${canPrint ? `<button onclick="printBarcode('${p.code}')" class="w-full px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 font-bold animate-bounce">🏷️ IMPRIMER</button>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        function createEntrepriseShipment(event) {
+            event.preventDefault();
+            
+            const pricing = calculateEntreprisePrice();
+            const paymentMethod = document.getElementById('entPaymentMethod').value;
+            
+            if (!paymentMethod) {
+                showToast('⚠️ Veuillez sélectionner un mode de paiement', 'warning');
+                return;
+            }
+            
+            const numero = 'TMS-' + new Date().getFullYear() + 
+                          ('0' + (new Date().getMonth() + 1)).slice(-2) +
+                          ('0' + new Date().getDate()).slice(-2) + '-' +
+                          ('00000' + (db.getAll().length + 1)).slice(-5);
+            const code = generateCode();
+            
+            const length = parseFloat(document.getElementById('entLength').value);
+            const width = parseFloat(document.getElementById('entWidth').value);
+            const height = parseFloat(document.getElementById('entHeight').value);
+            const realWeight = parseFloat(document.getElementById('entWeight').value);
+            
+            const paymentMethodLabels = {
+                'card': '💳 Carte bancaire',
+                'transfer': '🏦 Virement bancaire',
+                'account': '📋 Compte client'
+            };
+            
+            const pkg = {
+                numero: numero,
+                code: code,
+                voyage: currentVoyage,
+                senderName: currentUser.name,
+                senderPhone: '87 XX XX XX',
+                entreprise: currentUser.name,
+                receiverName: document.getElementById('entDestName').value,
+                receiverPhone: document.getElementById('entDestPhone').value,
+                destination: document.getElementById('entDestination').value,
+                dimensions: {
+                    length: length,
+                    width: width,
+                    height: height,
+                    volume: pricing.volume.toFixed(3)
+                },
+                weights: {
+                    real: realWeight,
+                    volumetric: pricing.volumetricWeight.toFixed(1),
+                    taxable: pricing.taxableWeight.toFixed(1)
+                },
+                pricing: {
+                    priceHT: pricing.priceHT,
+                    priceTVA: pricing.priceTVA,
+                    priceTTC: pricing.priceTTC
+                },
+                description: document.getElementById('entDescription').value,
+                status: 'En attente paiement',
+                statusHistory: [
+                    {
+                        status: 'Créé en ligne',
+                        by: currentUser.name,
+                        at: new Date().toISOString(),
+                        location: 'Portail Entreprise'
+                    }
+                ],
+                createdAt: new Date().toISOString(),
+                createdBy: currentUser.name,
+                createdOnline: true,
+                paymentMethod: paymentMethod,
+                paymentMethodLabel: paymentMethodLabels[paymentMethod],
+                dpamCompliant: true,
+                anomalies: [],
+                type: 'entreprise',
+                barcodeGenerated: false
+            };
+            
+            db.save(pkg);
+            
+            showToast(`✅ Connaissement ${numero} créé ! En attente de validation paiement par le bureau.`, 'success');
+            event.target.reset();
+            calculateEntreprisePrice();
+            loadEntrepriseData();
+            updateStats();
+            updateConnaissementTable();
+            updatePaiementsList();
+        }
+
+        function printBarcode(code) {
+            const pkg = db.findByCode(code);
+            if (!pkg) return;
+
+            const printArea = document.getElementById('printArea');
+            printArea.innerHTML = `
+                <div style="text-align: center; font-family: Arial, sans-serif;">
+                    <h2 style="margin-bottom: 10px;">TMS × Team Trade</h2>
+                    <div style="border: 2px solid #000; padding: 15px; margin: 10px 0;">
+                        <div style="font-size: 24px; font-weight: bold; margin-bottom: 10px;">${pkg.code}</div>
+                        <svg id="barcode"></svg>
+                    </div>
+                    <div style="text-align: left; font-size: 12px; margin-top: 15px; border-top: 2px solid #000; padding-top: 10px;">
+                        <div style="margin-bottom: 5px;"><strong>N° BL:</strong> ${pkg.numero}</div>
+                        <div style="margin-bottom: 5px;"><strong>Voyage:</strong> ${pkg.voyage}</div>
+                        <div style="margin-bottom: 5px;"><strong>Expéditeur:</strong> ${pkg.senderName}</div>
+                        <div style="margin-bottom: 5px;"><strong>Destinataire:</strong> ${pkg.receiverName}</div>
+                        <div style="margin-bottom: 5px;"><strong>Destination:</strong> ${pkg.destination}</div>
+                        <div style="margin-bottom: 5px;"><strong>Tél:</strong> ${pkg.receiverPhone}</div>
+                        <div style="margin-bottom: 5px;"><strong>Poids:</strong> ${pkg.weights.taxable} kg</div>
+                        <div style="margin-bottom: 5px;"><strong>Volume:</strong> ${pkg.dimensions.volume} m³</div>
+                        <div style="margin-bottom: 5px;"><strong>Dimensions:</strong> ${pkg.dimensions.length}×${pkg.dimensions.width}×${pkg.dimensions.height} cm</div>
+                        <div style="margin-bottom: 5px;"><strong>Marchandise:</strong> ${pkg.description}</div>
+                        <div style="margin-bottom: 5px; color: green;"><strong>✅ Paiement validé le:</strong> ${new Date(pkg.paymentValidatedAt).toLocaleDateString('fr-FR')}</div>
+                    </div>
+                    <div style="margin-top: 15px; font-size: 10px; color: #666; border-top: 1px solid #ccc; padding-top: 10px;">
+                        Créé le ${new Date(pkg.createdAt).toLocaleString('fr-FR')}<br>
+                        À coller sur le colis avant dépôt au quai
+                    </div>
+                </div>
+            `;
+
+            JsBarcode("#barcode", pkg.code, {
+                format: "CODE128",
+                width: 2,
+                height: 80,
+                displayValue: false
+            });
+
+            pkg.barcodeGenerated = true;
+            pkg.barcodePrintedAt = new Date().toISOString();
+            
+            pkg.status = 'Bon à embarquer';
+            pkg.statusHistory.push({
+                status: 'Bon à embarquer',
+                by: 'Système - Étiquette imprimée',
+                at: new Date().toISOString(),
+                location: 'Portail Entreprise'
+            });
+            
+            db.update(pkg.code, pkg);
+
+            document.getElementById('barcodeModal').classList.remove('hidden');
+            showToast(`✅ Étiquette prête pour ${pkg.code}`, 'success');
+            loadEntrepriseData();
+            updateStats();
+            updateConnaissementTable();
+        }
+
+        function closeBarcodeModal() {
+            document.getElementById('barcodeModal').classList.add('hidden');
+        }
+
+        // ╔══════════════════════════════════════════════════════════╗
+        // ENREGISTREMENT, VALIDATION BUREAU, ETC.
+        // ╚══════════════════════════════════════════════════════════╝
+        
+        function calculateVolume() {
+            const length = parseFloat(document.getElementById('length').value) || 0;
+            const width = parseFloat(document.getElementById('width').value) || 0;
+            const height = parseFloat(document.getElementById('height').value) || 0;
+            
+            const volume = (length * width * height) / 1000000;
+            document.getElementById('calculatedVolume').textContent = volume.toFixed(3) + ' m³';
+            
+            const volumetricWeight = volume * 200;
+            document.getElementById('volumetricWeight').textContent = volumetricWeight.toFixed(1) + ' kg';
+            
+            calculatePrice();
+            return volume;
+        }
+        
+        function calculatePrice() {
+            const realWeight = parseFloat(document.getElementById('weight').value) || 0;
+            const length = parseFloat(document.getElementById('length').value) || 0;
+            const width = parseFloat(document.getElementById('width').value) || 0;
+            const height = parseFloat(document.getElementById('height').value) || 0;
+            
+            const volume = (length * width * height) / 1000000;
+            const volumetricWeight = volume * 200;
+            const taxableWeight = Math.max(realWeight, volumetricWeight);
+            
+            document.getElementById('taxableWeight').textContent = taxableWeight.toFixed(1) + ' kg';
+            
+            const priceHT = taxableWeight * 140;
+            const priceTVA = priceHT * 0.13;
+            const priceTTC = priceHT + priceTVA;
+            
+            document.getElementById('priceHT').textContent = Math.round(priceHT).toLocaleString() + ' XPF';
+            document.getElementById('priceTVA').textContent = Math.round(priceTVA).toLocaleString() + ' XPF';
+            document.getElementById('priceTTC').textContent = Math.round(priceTTC).toLocaleString() + ' XPF';
+            
+            return {
+                taxableWeight: taxableWeight,
+                priceHT: Math.round(priceHT),
+                priceTVA: Math.round(priceTVA),
+                priceTTC: Math.round(priceTTC)
+            };
+        }
+
+        function registerPackage(event) {
+            event.preventDefault();
+            
+            const numero = 'TMS-' + new Date().getFullYear() + 
+                          ('0' + (new Date().getMonth() + 1)).slice(-2) +
+                          ('0' + new Date().getDate()).slice(-2) + '-' +
+                          ('00000' + (db.getAll().length + 1)).slice(-5);
+            const code = generateCode();
+            
+            const length = parseFloat(document.getElementById('length').value);
+            const width = parseFloat(document.getElementById('width').value);
+            const height = parseFloat(document.getElementById('height').value);
+            const realWeight = parseFloat(document.getElementById('weight').value);
+            
+            const volume = (length * width * height) / 1000000;
+            const volumetricWeight = volume * 200;
+            const taxableWeight = Math.max(realWeight, volumetricWeight);
+            const pricing = calculatePrice();
+            
+            const pkg = {
+                numero: numero,
+                code: code,
+                voyage: currentVoyage,
+                senderName: document.getElementById('senderName').value,
+                senderPhone: document.getElementById('senderPhone').value,
+                receiverName: document.getElementById('receiverName').value,
+                receiverPhone: document.getElementById('receiverPhone').value,
+                destination: document.getElementById('destination').value,
+                dimensions: {
+                    length: length,
+                    width: width,
+                    height: height,
+                    volume: volume.toFixed(3)
+                },
+                weights: {
+                    real: realWeight,
+                    volumetric: volumetricWeight.toFixed(1),
+                    taxable: taxableWeight.toFixed(1)
+                },
+                pricing: pricing,
+                description: document.getElementById('description').value,
+                status: 'En attente validation',
+                statusHistory: [
+                    {
+                        status: 'Créé',
+                        by: currentUser.name,
+                        at: new Date().toISOString(),
+                        location: 'Bureau Papeete'
+                    }
+                ],
+                createdAt: new Date().toISOString(),
+                createdBy: currentUser.name,
+                dpamCompliant: true,
+                anomalies: [],
+                type: 'bureau'
+            };
+            
+            db.save(pkg);
+            
+            showToast(`✅ Colis ${numero} enregistré sur ${currentVoyage} !`, 'success');
+            document.getElementById('registerForm').reset();
+            calculateVolume();
+            updateStats();
+            updateConnaissementTable();
+        }
+
+        function generateCode() {
+            const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            const numbers = '0123456789';
+            let code = '';
+            for (let i = 0; i < 3; i++) {
+                code += letters[Math.floor(Math.random() * letters.length)];
+            }
+            for (let i = 0; i < 3; i++) {
+                code += numbers[Math.floor(Math.random() * numbers.length)];
+            }
+            return code;
+        }
+
+        function handleScan() {
+            const inputField = document.getElementById('scanInput');
+            const code = inputField.value.toUpperCase().trim();
+            
+            if (!code) return;
+
+            const pkg = db.findByCode(code);
+            
+            if (!pkg) {
+                document.getElementById('scanDisplay').className = 'scanner-display error';
+                document.getElementById('scanDisplay').textContent = '❌ CODE NON TROUVÉ: ' + code;
+                showToast('❌ Colis non trouvé dans la base', 'error');
+                inputField.value = '';
+                return;
+            }
+
+            if (pkg.voyage !== currentVoyage) {
+                document.getElementById('scanDisplay').className = 'scanner-display error';
+                document.getElementById('scanDisplay').textContent = '⚠️ MAUVAIS VOYAGE';
+                document.getElementById('scanResult').className = 'block';
+                document.getElementById('scanResult').innerHTML = `
+                    <div class="bg-orange-100 border-2 border-orange-500 rounded-xl p-6">
+                        <h3 class="text-xl font-bold text-orange-900 mb-4">⚠️ VOYAGE DIFFÉRENT</h3>
+                        <div class="mb-4">
+                            <div class="font-bold text-gray-900">📦 ${pkg.numero}</div>
+                            <div class="text-sm text-gray-600">Code: ${pkg.code}</div>
+                        </div>
+                        <div class="bg-white rounded-lg p-4 border-2 border-orange-300">
+                            <div class="text-sm space-y-2">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Colis du voyage:</span>
+                                    <span class="font-bold text-orange-600">${pkg.voyage}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Voyage actif:</span>
+                                    <span class="font-bold text-green-600">${currentVoyage}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="text-sm text-orange-800 mt-4">Ce colis n'appartient pas au voyage en cours.</p>
+                    </div>
+                `;
+                showToast(`⚠️ Colis du ${pkg.voyage}, voyage actif: ${currentVoyage}`, 'warning');
+                inputField.value = '';
+                return;
+            }
+
+            const anomalies = detectAnomalies(pkg);
+            
+            if (anomalies.length > 0) {
+                showAnomaliesDetected(pkg, anomalies);
+            } else {
+                showValidationInterface(pkg);
+            }
+            
+            inputField.value = '';
+        }
+
+        function detectAnomalies(pkg) {
+            const anomalies = [];
+            if (Math.random() < 0.2) {
+                anomalies.push({
+                    type: 'POIDS_DIFFERENT',
+                    declared: pkg.weights.real,
+                    actual: (parseFloat(pkg.weights.real) * 1.15).toFixed(1),
+                    message: 'Poids réel supérieur au poids déclaré'
+                });
+            }
+            return anomalies;
+        }
+
+        function showAnomaliesDetected(pkg, anomalies) {
+            document.getElementById('scanDisplay').className = 'scanner-display error';
+            document.getElementById('scanDisplay').textContent = '⚠️ ANOMALIES DÉTECTÉES';
+            
+            const resultDiv = document.getElementById('scanResult');
+            resultDiv.className = 'block';
+            resultDiv.innerHTML = `
+                <div class="anomaly-alert">
+                    <h3 class="text-xl font-bold text-red-900 mb-4">⚠️ ANOMALIES DÉTECTÉES</h3>
+                    <div class="mb-4">
+                        <div class="font-bold text-gray-900">📦 ${pkg.numero}</div>
+                        <div class="text-sm text-gray-600">Code: ${pkg.code} | Voyage: ${pkg.voyage}</div>
+                    </div>
+                    ${anomalies.map(a => `
+                        <div class="anomaly-item">
+                            <div class="font-bold text-red-900 mb-2">${a.message}</div>
+                            <div class="text-sm">
+                                <div>Déclaré: ${a.declared}</div>
+                                <div class="text-red-600 font-bold">Réel: ${a.actual}</div>
+                            </div>
+                        </div>
+                    `).join('')}
+                    <div class="mt-6 grid grid-cols-2 gap-4">
+                        <button onclick="openAnomalyCorrection('${pkg.code}')" class="scanner-btn scanner-btn-success">
+                            🔧 CORRIGER
+                        </button>
+                        <button onclick="refusePackage('${pkg.code}')" class="scanner-btn scanner-btn-danger">
+                            ❌ REFUSER
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function showValidationInterface(pkg) {
+            document.getElementById('scanDisplay').className = 'scanner-display';
+            document.getElementById('scanDisplay').textContent = '✅ COLIS TROUVÉ: ' + pkg.code;
+            
+            const resultDiv = document.getElementById('scanResult');
+            resultDiv.className = 'block';
+            resultDiv.innerHTML = `
+                <div class="bg-white border-2 border-green-500 rounded-xl p-6">
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">📦 ${pkg.numero}</h3>
+                    <div class="mb-4"><span class="voyage-badge text-sm">${pkg.voyage}</span></div>
+                    <div class="grid grid-cols-2 gap-4 mb-6 text-sm">
+                        <div>
+                            <div class="text-gray-600">Expéditeur</div>
+                            <div class="font-bold">${pkg.senderName}</div>
+                        </div>
+                        <div>
+                            <div class="text-gray-600">Destinataire</div>
+                            <div class="font-bold">${pkg.receiverName}</div>
+                        </div>
+                        <div>
+                            <div class="text-gray-600">Destination</div>
+                            <div class="font-bold">${pkg.destination}</div>
+                        </div>
+                        <div>
+                            <div class="text-gray-600">Poids taxable</div>
+                            <div class="font-bold">${pkg.weights.taxable} kg</div>
+                        </div>
+                    </div>
+                    <div class="bg-green-50 border-2 border-green-500 rounded-lg p-4 mb-6">
+                        <div class="font-bold text-green-900 mb-2">✅ PRÊT À VALIDER</div>
+                    </div>
+                    <button onclick="validatePackage('${pkg.code}')" class="scanner-btn scanner-btn-success">
+                        ✅ VALIDER BON À EMBARQUER
+                    </button>
+                </div>
+            `;
+        }
+
+        function validatePackage(code) {
+            const pkg = db.findByCode(code);
+            if (!pkg) return;
+
+            pkg.status = 'Bon à embarquer';
+            pkg.statusHistory.push({
+                status: 'Bon à embarquer',
+                by: currentUser.name,
+                at: new Date().toISOString(),
+                location: 'Bureau Papeete'
+            });
+            
+            db.update(code, pkg);
+            
+            document.getElementById('scanDisplay').textContent = '✅ VALIDATION RÉUSSIE';
+            document.getElementById('scanResult').innerHTML = `
+                <div class="bg-green-100 border-2 border-green-500 rounded-xl p-6 text-center">
+                    <div class="text-6xl mb-4">✅</div>
+                    <div class="text-2xl font-bold text-green-900 mb-2">BON À EMBARQUER VALIDÉ</div>
+                    <div class="text-green-800">Colis ${pkg.numero}</div>
+                </div>
+            `;
+            
+            showToast(`✅ Colis ${pkg.numero} validé !`, 'success');
+            updateStats();
+            updateConnaissementTable();
+            
+            setTimeout(() => {
+                document.getElementById('scanResult').classList.add('hidden');
+                document.getElementById('scanDisplay').textContent = '📱 EN ATTENTE DE SCAN';
+            }, 3000);
+        }
+
+        function refusePackage(code) {
+            const pkg = db.findByCode(code);
+            if (!pkg) return;
+
+            const reason = prompt('Motif du refus:');
+            if (!reason) return;
+
+            pkg.status = 'Refusé';
+            pkg.refusalReason = reason;
+            pkg.statusHistory.push({
+                status: 'Refusé',
+                by: currentUser.name,
+                at: new Date().toISOString(),
+                reason: reason
+            });
+            
+            db.update(code, pkg);
+            
+            showToast(`❌ Colis ${pkg.numero} refusé`, 'error');
+            document.getElementById('scanResult').classList.add('hidden');
+            document.getElementById('scanDisplay').textContent = '📱 EN ATTENTE DE SCAN';
+            updateStats();
+            updateConnaissementTable();
+        }
+
+        function openAnomalyCorrection(code) {
+            const pkg = db.findByCode(code);
+            if (!pkg) return;
+
+            currentPackage = pkg;
+            
+            document.getElementById('anomalyModalContent').innerHTML = `
+                <div class="space-y-6">
+                    <div class="bg-gray-50 border-2 border-gray-200 rounded-xl p-4">
+                        <div class="font-bold text-gray-900 mb-2">📦 ${pkg.numero}</div>
+                        <div class="text-sm text-gray-600">Code: ${pkg.code} | Voyage: ${pkg.voyage}</div>
+                    </div>
+                    <div class="border-l-4 border-orange-500 pl-4">
+                        <h3 class="font-bold text-gray-900 mb-4">⚖️ POIDS</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Poids déclaré</label>
+                                <input type="text" value="${pkg.weights.real} kg" class="w-full px-4 py-2 border-2 rounded-lg bg-gray-100" readonly>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-2 text-orange-600">Poids vérifié *</label>
+                                <input type="number" id="correctedWeight" value="${pkg.weights.real}" step="0.1" class="w-full px-4 py-2 border-2 border-orange-500 rounded-lg">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-blue-50 border-2 border-blue-200 rounded-xl p-4" id="recalcDisplay">
+                        <h3 class="font-bold text-blue-900 mb-2">💰 RECALCUL</h3>
+                        <div class="text-sm space-y-1">
+                            <div class="flex justify-between">
+                                <span>Prix original:</span>
+                                <span>${pkg.pricing.priceHT.toLocaleString()} XPF</span>
+                            </div>
+                            <div class="flex justify-between text-orange-600 font-bold">
+                                <span>Nouveau prix:</span>
+                                <span id="newPriceHT">${pkg.pricing.priceHT.toLocaleString()} XPF</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('anomalyModal').classList.remove('hidden');
+            document.getElementById('correctedWeight').addEventListener('input', recalculateAnomaly);
+        }
+
+        function recalculateAnomaly() {
+            const newWeight = parseFloat(document.getElementById('correctedWeight').value) || 0;
+            const newPriceHT = newWeight * 140;
+            document.getElementById('newPriceHT').textContent = Math.round(newPriceHT).toLocaleString() + ' XPF';
+        }
+
+        function saveAnomalyCorrection() {
+            if (!currentPackage) return;
+
+            const newWeight = parseFloat(document.getElementById('correctedWeight').value);
+            const newPriceHT = newWeight * 140;
+            const newPriceTVA = newPriceHT * 0.13;
+            const newPriceTTC = newPriceHT + newPriceTVA;
+
+            currentPackage.weights.real = newWeight;
+            currentPackage.weights.taxable = newWeight;
+            currentPackage.pricing = {
+                priceHT: Math.round(newPriceHT),
+                priceTVA: Math.round(newPriceTVA),
+                priceTTC: Math.round(newPriceTTC)
+            };
+            
+            currentPackage.anomalies = currentPackage.anomalies || [];
+            currentPackage.anomalies.push({
+                detectedAt: new Date().toISOString(),
+                correctedBy: currentUser.name
+            });
+
+            currentPackage.status = 'Bon à embarquer';
+            currentPackage.statusHistory.push({
+                status: 'Anomalie corrigée + Bon à embarquer',
+                by: currentUser.name,
+                at: new Date().toISOString()
+            });
+            
+            db.update(currentPackage.code, currentPackage);
+            
+            closeAnomalyModal();
+            showToast(`✅ Anomalies corrigées !`, 'success');
+            document.getElementById('scanResult').classList.add('hidden');
+            document.getElementById('scanDisplay').textContent = '📱 EN ATTENTE DE SCAN';
+            updateStats();
+            updateConnaissementTable();
+        }
+
+        function closeAnomalyModal() {
+            document.getElementById('anomalyModal').classList.add('hidden');
+            currentPackage = null;
+        }
+
+        function startMarinSession() {
+            marinScannedCount = 0;
+            marinSessionStart = new Date();
+            
+            setInterval(() => {
+                if (marinSessionStart) {
+                    const elapsed = Math.floor((new Date() - marinSessionStart) / 1000);
+                    const minutes = Math.floor(elapsed / 60);
+                    const seconds = elapsed % 60;
+                    document.getElementById('marinTime').textContent = 
+                        `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                }
+            }, 1000);
+        }
+
+        function handleMarinScan() {
+            const code = document.getElementById('marinScanInput').value.toUpperCase().trim();
+            const mode = document.getElementById('marinMode').value;
+            
+            if (!code) return;
+
+            const pkg = db.findByCode(code);
+            
+            if (!pkg) {
+                document.getElementById('marinDisplay').className = 'scanner-display error';
+                document.getElementById('marinDisplay').textContent = '❌ CODE NON TROUVÉ';
+                showToast('❌ Colis non trouvé', 'error');
+                document.getElementById('marinScanInput').value = '';
+                return;
+            }
+
+            if (pkg.voyage !== currentVoyage) {
+                document.getElementById('marinDisplay').className = 'scanner-display error';
+                document.getElementById('marinDisplay').textContent = '⚠️ MAUVAIS VOYAGE';
+                showToast(`⚠️ Colis du ${pkg.voyage}, voyage actif: ${currentVoyage}`, 'warning');
+                document.getElementById('marinScanInput').value = '';
+                return;
+            }
+
+            if (mode === 'chargement') {
+                handleMarinChargement(pkg);
+            } else {
+                handleMarinDechargement(pkg);
+            }
+            
+            document.getElementById('marinScanInput').value = '';
+        }
+
+        function handleMarinChargement(pkg) {
+            if (pkg.status !== 'Bon à embarquer') {
+                document.getElementById('marinDisplay').className = 'scanner-display error';
+                document.getElementById('marinDisplay').textContent = '⚠️ PAS BON À EMBARQUER';
+                showToast('⚠️ Colis non validé !', 'warning');
+                return;
+            }
+
+            document.getElementById('marinDisplay').className = 'scanner-display';
+            document.getElementById('marinDisplay').textContent = '✅ BON À EMBARQUER';
+            
+            document.getElementById('marinScanResult').className = 'block';
+            document.getElementById('marinScanResult').innerHTML = `
+                <div class="bg-gray-800 border-2 border-green-500 rounded-xl p-6 text-white">
+                    <div class="text-green-400 font-bold text-xl mb-4">✅ BON À EMBARQUER</div>
+                    <div class="space-y-2 mb-6 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">N°:</span>
+                            <span class="font-bold">${pkg.numero}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Destination:</span>
+                            <span class="font-bold text-green-400">${pkg.destination}</span>
+                        </div>
+                    </div>
+                    <button onclick="confirmChargement('${pkg.code}')" class="scanner-btn scanner-btn-success">
+                        ✅ CONFIRMER CHARGEMENT
+                    </button>
+                </div>
+            `;
+        }
+
+        function confirmChargement(code) {
+            const pkg = db.findByCode(code);
+            if (!pkg) return;
+
+            pkg.status = 'À bord COBIA 3';
+            pkg.statusHistory.push({
+                status: 'Chargé',
+                by: currentUser.name,
+                at: new Date().toISOString(),
+                location: 'Quai Papeete'
+            });
+            
+            db.update(code, pkg);
+            
+            marinScannedCount++;
+            document.getElementById('marinScannedCount').textContent = marinScannedCount;
+            
+            document.getElementById('marinDisplay').textContent = '✅ CHARGEMENT CONFIRMÉ';
+            showToast(`✅ Colis ${pkg.numero} chargé`, 'success');
+            updateStats();
+            updateConnaissementTable();
+            
+            setTimeout(() => {
+                document.getElementById('marinScanResult').classList.add('hidden');
+                document.getElementById('marinDisplay').textContent = '📱 SCANNER UN COLIS';
+            }, 2000);
+        }
+
+        function handleMarinDechargement(pkg) {
+            if (pkg.status !== 'À bord COBIA 3') {
+                document.getElementById('marinDisplay').className = 'scanner-display error';
+                document.getElementById('marinDisplay').textContent = '⚠️ PAS À BORD';
+                showToast('⚠️ Ce colis n\'est pas à bord', 'warning');
+                return;
+            }
+
+            document.getElementById('marinDisplay').className = 'scanner-display';
+            document.getElementById('marinDisplay').textContent = '🚢 À BORD';
+            
+            document.getElementById('marinScanResult').className = 'block';
+            document.getElementById('marinScanResult').innerHTML = `
+                <div class="bg-gray-800 border-2 border-blue-500 rounded-xl p-6 text-white">
+                    <div class="text-blue-400 font-bold text-xl mb-4">🚢 COLIS À BORD</div>
+                    <div class="space-y-2 mb-6 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Destination:</span>
+                            <span class="font-bold text-blue-400">${pkg.destination}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Destinataire:</span>
+                            <span>${pkg.receiverName}</span>
+                        </div>
+                    </div>
+                    <button onclick="confirmDechargement('${pkg.code}')" class="scanner-btn scanner-btn-success">
+                        ✅ CONFIRMER DÉCHARGEMENT
+                    </button>
+                </div>
+            `;
+        }
+
+        function confirmDechargement(code) {
+            const pkg = db.findByCode(code);
+            if (!pkg) return;
+
+            pkg.status = 'Disponible retrait';
+            pkg.statusHistory.push({
+                status: 'Déchargé',
+                by: currentUser.name,
+                at: new Date().toISOString(),
+                location: `Quai ${pkg.destination}`
+            });
+            
+            db.update(code, pkg);
+            
+            marinScannedCount++;
+            document.getElementById('marinScannedCount').textContent = marinScannedCount;
+            
+            document.getElementById('marinDisplay').textContent = '✅ DÉCHARGEMENT CONFIRMÉ';
+            showToast(`✅ Colis ${pkg.numero} déchargé`, 'success');
+            updateStats();
+            updateConnaissementTable();
+            
+            setTimeout(() => {
+                document.getElementById('marinScanResult').classList.add('hidden');
+                document.getElementById('marinDisplay').textContent = '📱 SCANNER UN COLIS';
+            }, 2000);
+        }
+
+        function updateConnaissementTable() {
+            const tbody = document.getElementById('connaissementTableBody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            
+            const packages = db.getByVoyage(currentVoyage);
+            
+            if (packages.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="px-6 py-8 text-center text-gray-500">Aucun connaissement pour ${currentVoyage}</td></tr>`;
+                return;
+            }
+            
+            packages.forEach(pkg => {
+                const row = tbody.insertRow();
+                const statusClass = 'status-' + pkg.status.replace(/\s/g, '-').toLowerCase();
+                const typeLabel = pkg.type === 'entreprise' ? '🏢 Entreprise' : '🏢 Bureau';
+                const typeColor = pkg.type === 'entreprise' ? 'text-purple-600' : 'text-blue-600';
+                
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${pkg.numero}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-blue-600">${pkg.code}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${pkg.senderName}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${pkg.destination}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-xs font-semibold ${typeColor}">${typeLabel}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="status-badge ${statusClass}">${pkg.status}</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                        <button onclick="viewPackageDetails('${pkg.code}')" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                            Voir
+                        </button>
+                    </td>
+                `;
+            });
+        }
+
+        function viewPackageDetails(code) {
+            const pkg = db.findByCode(code);
+            if (!pkg) return;
+
+            const typeLabel = pkg.type === 'entreprise' ? '🏢 Créé en ligne (Entreprise)' : '🏢 Créé au bureau';
+
+            document.getElementById('detailsModalContent').innerHTML = `
+                <div class="space-y-6">
+                    <div class="bg-gradient-to-r from-blue-50 to-blue-100 border-2 border-blue-300 rounded-xl p-6">
+                        <h3 class="text-2xl font-bold text-blue-900 mb-2">📦 ${pkg.numero}</h3>
+                        <div class="flex gap-4 items-center flex-wrap">
+                            <div class="text-blue-700">Code: <span class="font-bold text-2xl">${pkg.code}</span></div>
+                            <span class="voyage-badge text-sm">${pkg.voyage}</span>
+                            <div class="text-xs font-semibold ${pkg.type === 'entreprise' ? 'text-purple-600' : 'text-blue-600'}">${typeLabel}</div>
+                        </div>
+                        <span class="status-badge status-${pkg.status.replace(/\s/g, '-').toLowerCase()} mt-2">${pkg.status}</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-6">
+                        <div>
+                            <h4 class="font-bold text-gray-900 mb-2">👤 Expéditeur</h4>
+                            <div class="text-gray-700">${pkg.senderName}</div>
+                            <div class="text-gray-600 text-sm">${pkg.senderPhone}</div>
+                            ${pkg.entreprise ? `<div class="text-purple-600 text-xs font-semibold mt-1">Entreprise: ${pkg.entreprise}</div>` : ''}
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-gray-900 mb-2">📍 Destinataire</h4>
+                            <div class="text-gray-700">${pkg.receiverName}</div>
+                            <div class="text-gray-600 text-sm">${pkg.receiverPhone}</div>
+                            <div class="text-blue-600 font-semibold mt-1">${pkg.destination}</div>
+                        </div>
+                    </div>
+                    ${pkg.paymentMethod ? `
+                        <div class="border-l-4 border-green-500 pl-4">
+                            <h4 class="font-bold text-gray-900 mb-2">💳 Paiement</h4>
+                            <div class="text-sm">
+                                <div>Mode: ${pkg.paymentMethodLabel}</div>
+                                ${pkg.paymentValidatedAt ? `<div class="text-green-600 font-bold">✅ Validé le ${new Date(pkg.paymentValidatedAt).toLocaleDateString('fr-FR')} par ${pkg.paymentValidatedBy}</div>` : ''}
+                            </div>
+                        </div>
+                    ` : ''}
+                    <div class="text-xs text-gray-500">
+                        <div>Créé le: ${new Date(pkg.createdAt).toLocaleString('fr-FR')}</div>
+                        ${pkg.barcodeGenerated ? '<div class="text-green-600 font-bold">✅ Code-barres imprimé</div>' : ''}
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('detailsModal').classList.remove('hidden');
+        }
+
+        function closeDetailsModal() {
+            document.getElementById('detailsModal').classList.add('hidden');
+        }
+
+        function updateStats() {
+            const packages = db.getByVoyage(currentVoyage);
+            
+            const waiting = packages.filter(p => p.status === 'En attente validation').length;
+            const validated = packages.filter(p => p.status === 'Bon à embarquer').length;
+            const onboard = packages.filter(p => p.status === 'À bord COBIA 3').length;
+            const anomalies = packages.filter(p => p.anomalies && p.anomalies.length > 0).length;
+            const totalVoyage = packages.length;
+            
+            if (document.getElementById('waitingCountGerant')) {
+                document.getElementById('waitingCountGerant').textContent = waiting;
+                document.getElementById('validatedCountGerant').textContent = validated;
+                document.getElementById('onboardCountGerant').textContent = onboard;
+                document.getElementById('anomalyCountGerant').textContent = anomalies;
+                
+                const caVoyage = packages.reduce((sum, p) => sum + (p.pricing?.priceTTC || 0), 0);
+                document.getElementById('caVoyage').textContent = Math.round(caVoyage).toLocaleString() + ' XPF';
+                
+                const currentMonth = new Date().getMonth();
+                const currentYear = new Date().getFullYear();
+                const allPackages = db.getAll();
+                const monthPackages = allPackages.filter(p => {
+                    const date = new Date(p.createdAt);
+                    return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
+                });
+                const caMonth = monthPackages.reduce((sum, p) => sum + (p.pricing?.priceTTC || 0), 0);
+                document.getElementById('caMonth').textContent = Math.round(caMonth).toLocaleString() + ' XPF';
+                
+                const caTotal = allPackages.reduce((sum, p) => sum + (p.pricing?.priceTTC || 0), 0);
+                document.getElementById('caTotal').textContent = Math.round(caTotal).toLocaleString() + ' XPF';
+            }
+            
+            if (document.getElementById('waitingCountSecretaire')) {
+                document.getElementById('waitingCountSecretaire').textContent = waiting;
+                document.getElementById('validatedCountSecretaire').textContent = validated;
+                document.getElementById('onboardCountSecretaire').textContent = onboard;
+                document.getElementById('totalVoyageSecretaire').textContent = totalVoyage;
+            }
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast show toast-${type}`;
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🚢 TMS × Team Trade - Système Complet Cobia3 V3 FINAL + 📷 CAMERA');
+            console.log('✅ Bouton clôturer uniquement pour direction');
+            console.log('✅ Validation paiement bureau avant impression QR');
+            console.log('✅ Système de notifications pour entreprises');
+            console.log('✅ NOUVEAU: Scanner caméra pour validation bureau et marin');
+            console.log('🚢 Voyage actif:', currentVoyage);
+        });
+    </script>
+</body>
+</html>
